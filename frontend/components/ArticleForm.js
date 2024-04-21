@@ -18,7 +18,7 @@ export default function ArticleForm(props) {
     if(currentArticle?.article_id) {
       setValues({title:currentArticle.title,text:currentArticle.text,topic:currentArticle.topic})
     } else {
-      setValues({initialFormValues});
+      setValues(initialFormValues);
     }
   }, [currentArticle]);
 
