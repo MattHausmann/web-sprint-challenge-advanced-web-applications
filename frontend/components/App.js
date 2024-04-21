@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { NavLink, Routes, Route, useNavigate } from 'react-router-dom'
 import Articles from './Articles'
 import LoginForm from './LoginForm'
@@ -17,6 +17,7 @@ export default function App() {
   const [currentArticleId, setCurrentArticleId] = useState()
   const [spinnerOn, setSpinnerOn] = useState(false)
 
+  
   // ✨ Research `useNavigate` in React Router v.6
   const navigate = useNavigate()
   const redirectToLogin = () => {
@@ -32,11 +33,10 @@ export default function App() {
     // and a message saying "Goodbye!" should be set in its proper state.
     // In any case, we should redirect the browser back to the login screen,
     // using the helper above.
-    if(localStorage.getItem('token')) {
-      localStorage.removeItem('token');
-      setMessage('Goodbye!');
-    }
+    setSpinnerOn(true);
+    localStorage.removeItem('token');
     redirectToLogin();
+    setSpinnerOn(false);
   }
 
   const login = ({ username, password }) => {
@@ -51,17 +51,16 @@ export default function App() {
     axios
       .post(loginUrl, {username:username,password:password})
       .then((resp) => { 
-        console.log('got response');
         setMessage(resp.data.message);
         localStorage.setItem('token', resp.data.token);
+        redirectToArticles();    
         setSpinnerOn(false);
-        console.log('should NOT be spinning. spinnerOn is ' + spinnerOn);
-    
+
       })
-      .catch((err) => 
-        console.log(err)
-      );
-    redirectToArticles();
+      .catch((err) => {
+        redirectToLogin();
+        setSpinnerOn(false);
+  }   );
   }
 
   const getArticles = () => {
@@ -73,6 +72,19 @@ export default function App() {
     // If something goes wrong, check the status of the response:
     // if it's a 401 the token might have gone bad, and we should redirect to login.
     // Don't forget to turn off the spinner!
+    setMessage('');
+    setSpinnerOn(true);
+    axios.get(articlesUrl, { headers: {"Authorization" : `${localStorage.getItem('token')}`} })
+      .then((res) => {
+        setMessage(res.data.message);
+        setArticles(res.data.articles);
+        setSpinnerOn(false);
+      })
+      .catch((err) => {
+        console.log(err);
+        redirectToLogin();
+        setSpinnerOn(false);
+      });
   }
 
   const postArticle = article => {
@@ -80,22 +92,72 @@ export default function App() {
     // The flow is very similar to the `getArticles` function.
     // You'll know what to do! Use log statements or breakpoints
     // to inspect the response from the server.
+
+    setMessage('');
+    setSpinnerOn(true);
+    axios.post(articlesUrl, article, {headers:{"Authorization": `${localStorage.getItem('token')}`}})
+    .then((res) => {
+      setMessage(res.data.message);
+      getArticles();
+      setSpinnerOn(false);
+    })    
   }
 
   const updateArticle = ({ article_id, article }) => {
     // ✨ implement
     // You got this!
+    console.log(article_id);
+    console.log(article);
+    setMessage('');
+    setSpinnerOn(true);
+    axios.put(articlesUrl+'/'+article_id, article, {headers:{"Authorization": `${localStorage.getItem('token')}`}})
+      .then((res) => {
+        console.log(res);
+        setMessage(res.data.message);
+        getArticles();
+      });
   }
 
   const deleteArticle = article_id => {
     // ✨ implement
+    console.log(article_id);
+    setMessage('');
+    setSpinnerOn(true);
+    axios.delete(articlesUrl + '/' + article_id.article_id, {headers:{"Authorization": `${localStorage.getItem('token')}`}})
+      .then((res) => {
+        console.log(res);
+        setMessage(res.data.message);
+        getArticles();
+      });
+  }
+
+  const handleEditButton = (art) =>{
+
+
+    console.log(art);
+    setCurrentArticleId(art.article_id);
+    let values={
+      title:art.title,
+      text: art.text,
+      topic: art.topic
+    };
+
+    articles.map((article) => {
+      if(article.article_id == art.articleId) {
+        article.title=art.title;
+        article.text=art.text;
+        article.topic=art.topic;
+      }
+    });
+    
+
   }
 
   return (
     // ✨ fix the JSX: `Spinner`, `Message`, `LoginForm`, `ArticleForm` and `Articles` expect props ❗
     <>
       <Spinner on={spinnerOn}/>
-      <Message />
+      <Message message={message}/>
       <button id="logout" onClick={logout}>Logout from app</button>
       <div id="wrapper" style={{ opacity: spinnerOn ? "0.25" : "1" }}> {/* <-- do not change this line */}
         <h1>Advanced Web Applications</h1>
@@ -107,8 +169,18 @@ export default function App() {
           <Route path="/" element={<LoginForm handleLogin={login}/>} />
           <Route path="articles" element={
             <>
-              <ArticleForm />
-              <Articles />
+              <ArticleForm
+              postArticle={postArticle}
+              updateArticle={updateArticle}
+               setCurrentArticleId={setCurrentArticleId} 
+               currentArticle={articles.filter((article) => article.article_id == currentArticleId)[0]}
+              />
+              <Articles articles={articles}
+              getArticles={getArticles}
+              deleteArticle={deleteArticle} 
+              setCurrentArticleId={handleEditButton}
+              currentArticleId={currentArticleId}
+              />
             </>
           } />
         </Routes>
