@@ -16,6 +16,8 @@ export default function ArticleForm(props) {
     // values of the form. If it's not, we should reset the form back to initial values.
     if(currentArticle) {
       setValues({title:currentArticle.title,text:currentArticle.text,topic:currentArticle.topic})
+    } else {
+      setValues({initialFormValues});
     }
   }, [currentArticle]);
 
@@ -39,6 +41,7 @@ export default function ArticleForm(props) {
       updateArticle({'article_id': currentArticle.article_id, 'article': values});
       setValues(initialFormValues);
     } else {
+      console.log('about to post');
       postArticle(values);
       setValues(initialFormValues);
     }

@@ -35,6 +35,7 @@ export default function App() {
     // using the helper above.
     setSpinnerOn(true);
     localStorage.removeItem('token');
+    setMessage('Goodbye!')
     redirectToLogin();
     setSpinnerOn(false);
   }
@@ -95,6 +96,7 @@ export default function App() {
     // You'll know what to do! Use log statements or breakpoints
     // to inspect the response from the server.
 
+    console.log('posting an article');
     setMessage('');
     setSpinnerOn(true);
     axios.post(articlesUrl, article, {headers:{"Authorization": `${localStorage.getItem('token')}`}})
@@ -102,19 +104,17 @@ export default function App() {
       setArticles([...articles, article]);
       setMessage(res.data.message);
       setSpinnerOn(false);
-    })    
+    })
+
   }
 
   const updateArticle = ({ article_id, article }) => {
     // ✨ implement
     // You got this!
-    console.log(article_id);
-    console.log(article);
     setMessage('');
     setSpinnerOn(true);
     axios.put(articlesUrl+'/'+article_id, article, {headers:{"Authorization": `${localStorage.getItem('token')}`}})
       .then((res) => {
-        console.log(res);
 
         let newArticles = [...articles];
         for(let i in newArticles) {
@@ -124,7 +124,7 @@ export default function App() {
             newArticles[i].topic=article.topic;
            }
          }
-         setCurrentArticleId(undefined);
+        setCurrentArticleId(undefined);
         setArticles(newArticles);
         setMessage(res.data.message);
         setSpinnerOn(false);
@@ -151,11 +151,6 @@ export default function App() {
 
     console.log(art);
     setCurrentArticleId(art.article_id);
-    let values={
-      title:art.title,
-      text: art.text,
-      topic: art.topic
-    };
 
     articles.map((article) => {
       if(article.article_id == art.articleId) {
