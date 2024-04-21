@@ -51,16 +51,18 @@ export default function App() {
     axios
       .post(loginUrl, {username:username,password:password})
       .then((resp) => { 
-        setMessage(resp.data.message);
         localStorage.setItem('token', resp.data.token);
-        redirectToArticles();    
+        navigate('/articles');
+        console.log(resp.data.message);
+        console.log('about to set message');
+        setMessage(resp.data.message);
+        console.log('just set message');
         setSpinnerOn(false);
-
       })
       .catch((err) => {
         redirectToLogin();
         setSpinnerOn(false);
-  }   );
+      });
   }
 
   const getArticles = () => {
@@ -76,9 +78,9 @@ export default function App() {
     setSpinnerOn(true);
     axios.get(articlesUrl, { headers: {"Authorization" : `${localStorage.getItem('token')}`} })
       .then((res) => {
-        setMessage(res.data.message);
         setArticles(res.data.articles);
         setSpinnerOn(false);
+        setMessage(res.data.message);
       })
       .catch((err) => {
         console.log(err);
@@ -97,8 +99,8 @@ export default function App() {
     setSpinnerOn(true);
     axios.post(articlesUrl, article, {headers:{"Authorization": `${localStorage.getItem('token')}`}})
     .then((res) => {
+      setArticles([...articles, article]);
       setMessage(res.data.message);
-      getArticles();
       setSpinnerOn(false);
     })    
   }
@@ -113,8 +115,20 @@ export default function App() {
     axios.put(articlesUrl+'/'+article_id, article, {headers:{"Authorization": `${localStorage.getItem('token')}`}})
       .then((res) => {
         console.log(res);
+
+        let newArticles = [...articles];
+        for(let i in newArticles) {
+           if(newArticles[i].article_id == article_id) {
+            newArticles[i].title=article.title;
+            newArticles[i].text=article.text;
+            newArticles[i].topic=article.topic;
+           }
+         }
+         setCurrentArticleId(undefined);
+        setArticles(newArticles);
         setMessage(res.data.message);
-        getArticles();
+        setSpinnerOn(false);
+
       });
   }
 
@@ -126,8 +140,9 @@ export default function App() {
     axios.delete(articlesUrl + '/' + article_id.article_id, {headers:{"Authorization": `${localStorage.getItem('token')}`}})
       .then((res) => {
         console.log(res);
+        setArticles(articles.filter((art) => art.article_id != article_id.article_id));
         setMessage(res.data.message);
-        getArticles();
+        setSpinnerOn(false);
       });
   }
 
@@ -163,7 +178,7 @@ export default function App() {
         <h1>Advanced Web Applications</h1>
         <nav>
           <NavLink id="loginScreen" to="/">Login</NavLink>
-          <NavLink id="articlesScreen" to="/articles">Articles</NavLink>
+          <NavLink id="articlesScreen" to={localStorage.getItem('token')?"/articles":"/"}>Articles</NavLink>
         </nav>
         <Routes>
           <Route path="/" element={<LoginForm handleLogin={login}/>} />
